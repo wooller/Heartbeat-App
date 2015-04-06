@@ -146,6 +146,8 @@ public class MessagingActivity extends Activity {
         @Override
         public void onMessageFailed(MessageClient client, Message message, MessageFailureInfo failureInfo){
             Toast.makeText(MessagingActivity.this, "Message failed to send", Toast.LENGTH_LONG).show();
+            Log.d("Message Failure Info", failureInfo.getSinchError().toString());
+            Log.d("Message Failure Recip", failureInfo.getRecipientId());
         }
 
         @Override

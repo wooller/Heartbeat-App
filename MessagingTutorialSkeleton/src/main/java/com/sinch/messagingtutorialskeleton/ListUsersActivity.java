@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -20,7 +21,9 @@ import com.example.messagingtutorialskeleton.R;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseInstallation;
+import com.parse.ParseObject;
 import com.parse.ParseQuery;
+import com.parse.ParseQueryAdapter;
 import com.parse.ParseUser;
 import com.sinch.android.rtc.Sinch;
 
@@ -32,9 +35,8 @@ import java.util.List;
  */
 public class ListUsersActivity extends Activity {
 
-    private String currentUserId;
-    private ArrayAdapter<String> namesArrayAdapter;
-    private ArrayList<String> names;
+
+    private ListViewAdapter listViewAdapter;
     private ListView usersListView;
     private Button logoutButton;
     private ProgressDialog progressDialog;
@@ -54,7 +56,11 @@ public class ListUsersActivity extends Activity {
         installation.put("user", ParseUser.getCurrentUser());
         installation.saveInBackground();
 
-        showSpinner();
+
+
+
+
+       showSpinner();
 
 
 
@@ -73,41 +79,31 @@ public class ListUsersActivity extends Activity {
         //set clickable list of users
         private void setConversationsList(){
 
-            currentUserId = ParseUser.getCurrentUser().getObjectId();
-            names = new ArrayList<String>();
+            //Initialize the subclass of PQM
+            listViewAdapter = new ListViewAdapter(this);
 
-            ParseQuery<ParseUser> query = ParseUser.getQuery();
-            //dont include current user
-            query.whereNotEqualTo("objectId", currentUserId);
-            query.findInBackground(new FindCallback<ParseUser>() {
-                public void done(List<ParseUser> userList, com.parse.ParseException e) {
-                    if (e == null) {
-                        for (int i = 0; i < userList.size(); i++) {
-                            names.add(userList.get(i).getUsername().toString());
-                        }
-                        usersListView = (ListView) findViewById(R.id.usersListView);
+            //Initialize ListView and set initial view to listadapter
+            usersListView = (ListView) findViewById(R.id.usersListView);
+            usersListView.setAdapter(listViewAdapter);
 
 
-                        namesArrayAdapter = new ArrayAdapter<String>(getApplicationContext(), R.layout.user_list_item, names);
 
-                        usersListView.setAdapter(namesArrayAdapter);
-                        usersListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                            @Override
-                            public void onItemClick(AdapterView<?> a, View v, int i, long l) {
-                                openConversation(names, i);
-                            }
-                        });
-                    } else {
-                        Toast.makeText(getApplicationContext(), "Error loading user list", Toast.LENGTH_LONG).show();
-                    }
+
+
+            usersListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> a, View v, int i, long l) {
+                    openConversation(listViewAdapter.getItem(i));
                 }
             });
+
         }
 
+
     //open conversation with one person
-    public void openConversation(ArrayList<String> names, int pos) {
+    public void openConversation(ParseObject name) {
         ParseQuery<ParseUser> query = ParseUser.getQuery();
-        query.whereEqualTo("username", names.get(pos));
+        query.whereEqualTo("objectId", name.getObjectId());
         query.findInBackground(new FindCallback<ParseUser>() {
             @Override
             public void done(List<ParseUser> user, com.parse.ParseException e) {
