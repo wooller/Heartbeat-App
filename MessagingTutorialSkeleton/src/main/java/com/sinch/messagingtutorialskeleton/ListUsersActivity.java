@@ -15,6 +15,7 @@ import android.widget.ArrayAdapter;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.example.messagingtutorialskeleton.R;
@@ -25,10 +26,13 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseQueryAdapter;
 import com.parse.ParseUser;
+import com.parse.SaveCallback;
 import com.sinch.android.rtc.Sinch;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by Andy on 14/03/2015.
@@ -39,8 +43,12 @@ public class ListUsersActivity extends Activity {
     private ListViewAdapter listViewAdapter;
     private ListView usersListView;
     private Button logoutButton;
+    private Spinner status_spinner;
+    private String[] arraySpinner;
     private ProgressDialog progressDialog;
     private BroadcastReceiver receiver = null;
+    private Timer timer = new Timer();
+    private TimerTask timerTask;
 
 
     @Override
@@ -56,14 +64,10 @@ public class ListUsersActivity extends Activity {
         installation.put("user", ParseUser.getCurrentUser());
         installation.saveInBackground();
 
+        //display the loading spinner for starting sinch
+        showSpinner();
 
-
-
-
-       showSpinner();
-
-
-
+        // set up logout button for an onlclick listener, log the user out of parse and return to the login activity
         logoutButton = (Button) findViewById(R.id.logoutButton);
         logoutButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -74,6 +78,68 @@ public class ListUsersActivity extends Activity {
                 startActivity(intent);
             }
         });
+
+        //create options array for spinner
+        this.arraySpinner = new String[]{
+                "online", "offline", "busy"
+        };
+
+        //display spinner on screen and attach array
+        status_spinner = (Spinner) findViewById(R.id.status_spinner);
+        final ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, arraySpinner);
+        status_spinner.setAdapter(spinnerAdapter);
+
+        //set the selected value of the spinner to the users status in Parse
+        ParseQuery<ParseUser> query = ParseUser.getQuery();
+        query.whereEqualTo("objectId", ParseUser.getCurrentUser().getObjectId());
+        query.findInBackground(new FindCallback<ParseUser>() {
+            @Override
+            public void done(List<ParseUser> user_status, com.parse.ParseException e) {
+                if (e == null) {
+                    //set the selection on the spinner to the value of the current parse users status
+                    status_spinner.setSelection(spinnerAdapter.getPosition(user_status.get(0).get("status").toString()));
+                } else {
+                    Toast.makeText(getApplicationContext(), "Error loading default spinner value", Toast.LENGTH_LONG).show();
+                }
+
+            }
+        });
+
+        //Create onclick listener for spinner and save new status to parse when the item is selected
+        status_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                ParseUser user = ParseUser.getCurrentUser();
+                user.put("status", parent.getItemAtPosition(position));
+
+                if (parent.getItemAtPosition(position) == "online"){
+                    user.put("status_color", "#000000");
+                } else if (parent.getItemAtPosition(position) == "offline"){
+                    user.put("status_color", "#a9a9a9");
+                } else if (parent.getItemAtPosition(position) == "busy"){
+                    user.put("status_color", "#cb333b");
+                }
+
+                user.saveInBackground(new SaveCallback() {
+                    @Override
+                    public void done(ParseException e) {
+                        if (e == null) {
+
+                        } else {
+                            Toast.makeText(getApplicationContext(), "There was a problem updating your status", Toast.LENGTH_LONG).show();
+                        }
+                    }
+
+                });
+
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
     }
 
         //set clickable list of users
@@ -143,8 +209,29 @@ public class ListUsersActivity extends Activity {
     }
 
     @Override
+    public void onPause(){
+        super.onPause();
+        timer.cancel();
+    }
+
+    @Override
+    public void onDestroy(){
+        super.onDestroy();
+        timer.cancel();
+    }
+
+    @Override
     public void onResume() {
         setConversationsList();
         super.onResume();
+        timer = new Timer();
+        timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                listViewAdapter.loadObjects();
+            }
+        };
+        timer.schedule(timerTask, 30000, 30000);
+
     }
 }

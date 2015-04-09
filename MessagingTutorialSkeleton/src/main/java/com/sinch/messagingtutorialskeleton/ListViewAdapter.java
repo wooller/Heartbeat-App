@@ -3,6 +3,7 @@ package com.sinch.messagingtutorialskeleton;
 
 
 import android.content.Context;
+import android.graphics.Color;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,10 +53,12 @@ public class ListViewAdapter extends ParseQueryAdapter<ParseObject>{
         //Add the username textview
         TextView userListItem = (TextView) v.findViewById(R.id.text1);
         userListItem.setText(object.get("username").toString());
-
+        userListItem.setTextColor(Color.parseColor(object.get("status_color").toString()));
         //Add the status textview
         TextView userListSubItem = (TextView) v.findViewById(R.id.userListSubItem);
         userListSubItem.setText(object.get("status").toString());
+        userListSubItem.setTextColor(Color.parseColor(object.get("status_color").toString()));
+
         return v;
     }
 
