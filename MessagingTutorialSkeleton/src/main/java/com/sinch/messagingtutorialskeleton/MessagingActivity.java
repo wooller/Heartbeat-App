@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import com.example.messagingtutorialskeleton.R;
 import com.parse.FindCallback;
+import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseInstallation;
 import com.parse.ParseObject;
@@ -88,17 +89,17 @@ public class MessagingActivity extends Activity {
         String[] userIds = {currentUserId, recipientId};
         ParseQuery<ParseObject> query = ParseQuery.getQuery("ParseMessage");
         query.whereContainedIn("senderId", Arrays.asList(userIds));
-        query.whereContainedIn("recipientId", Arrays.asList(recipientId));
+        query.whereContainedIn("recipientId", Arrays.asList(userIds));
         query.orderByAscending("createdAt");
         query.findInBackground(new FindCallback<ParseObject>() {
             @Override
             public void done(List<ParseObject> messageList, ParseException e) {
-                if (e == null){
-                    for (int i = 0; i < messageList.size(); i++){
+                if (e == null) {
+                    for (int i = 0; i < messageList.size(); i++) {
                         WritableMessage message = new WritableMessage(messageList.get(i).get("recipientId").toString(), messageList.get(i).get("messageText").toString());
-                        if (messageList.get(i).get("senderId").toString().equals(currentUserId)){
+                        if (messageList.get(i).get("senderId").toString().equals(currentUserId)) {
                             messageAdapter.addMessage(message, MessageAdapter.DIRECTION_OUTGOING);
-                        }else {
+                        } else {
                             messageAdapter.addMessage(message, MessageAdapter.DIRECTION_INCOMING);
                         }
                     }
@@ -116,6 +117,7 @@ public class MessagingActivity extends Activity {
         messageService.sendMessage(recipientId, messageBody);
         messageBodyField.setText("");
     }
+
 
     //unbind the service when the activity is destroyed
     @Override
@@ -151,12 +153,33 @@ public class MessagingActivity extends Activity {
         }
 
         @Override
-        public void onIncomingMessage(MessageClient client, Message message){
+        public void onIncomingMessage(MessageClient client, final Message message){
             //display an incoming message
             if (message.getSenderId().equals(recipientId)){
                 WritableMessage writableMessage = new WritableMessage(message.getRecipientIds().get(0), message.getTextBody());
                 messageAdapter.addMessage(writableMessage, MessageAdapter.DIRECTION_INCOMING);
 
+                //get latest message sent in parse and update seen to true
+                ParseQuery<ParseObject> query = ParseQuery.getQuery("ParseMessage");
+                query.whereEqualTo("senderId", message.getSenderId());
+                query.whereEqualTo("recipientId", message.getRecipientIds().get(0));
+                query.addDescendingOrder("createdAt");
+                query.findInBackground(new FindCallback<ParseObject>() {
+                    public void done(List<ParseObject> messagelist, ParseException e) {
+                        if (messagelist.size() != 0) {
+                            ParseQuery<ParseObject> seenQuery = ParseQuery.getQuery("ParseMessage");
+                            seenQuery.getInBackground(messagelist.get(0).getObjectId(), new GetCallback<ParseObject>() {
+                                @Override
+                                public void done(ParseObject messageObject, ParseException e) {
+                                    if (e == null) {
+                                        messageObject.put("messageSeen", true);
+                                        messageObject.saveInBackground();
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
             }
         }
 
@@ -188,6 +211,11 @@ public class MessagingActivity extends Activity {
 
         }
 
+        //Start timer to check if a message has been seen
+        public void messageSeenTimer(){
+
+        }
+
         @Override
         public void onMessageDelivered(MessageClient client, MessageDeliveryInfo deliveryInfo){
             //mp.start();
@@ -197,12 +225,7 @@ public class MessagingActivity extends Activity {
         @Override
         public void onShouldSendPushData(MessageClient client, Message message, List<PushPair> pushPairs){
 
-            Log.w("PushMethod", "it works");
-
-
             final WritableMessage writableMessage = new WritableMessage(message.getRecipientIds().get(0), message.getTextBody());
-
-
 
             ParseQuery userQuery = ParseUser.getQuery();
             userQuery.whereEqualTo("objectId", writableMessage.getRecipientIds().get(0));

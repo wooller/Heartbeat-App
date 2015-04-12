@@ -1,6 +1,7 @@
 package com.sinch.messagingtutorialskeleton;
 
 import android.app.Activity;
+import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -79,6 +80,8 @@ public class MessageAdapter extends BaseAdapter {
 
         TextView txtMessage = (TextView) convertView.findViewById(R.id.txtMessage);
         txtMessage.setText(message.getTextBody());
+
+        Log.d("MessageAdapter", String.valueOf(direction));
 
         return convertView;
     }
