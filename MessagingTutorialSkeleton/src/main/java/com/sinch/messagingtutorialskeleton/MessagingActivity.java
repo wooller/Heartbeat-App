@@ -98,9 +98,9 @@ public class MessagingActivity extends Activity {
                     for (int i = 0; i < messageList.size(); i++) {
                         WritableMessage message = new WritableMessage(messageList.get(i).get("recipientId").toString(), messageList.get(i).get("messageText").toString());
                         if (messageList.get(i).get("senderId").toString().equals(currentUserId)) {
-                            messageAdapter.addMessage(message, MessageAdapter.DIRECTION_OUTGOING);
+                            messageAdapter.addMessage(message, MessageAdapter.DIRECTION_OUTGOING, messageList.get(i).get("messageSeen").toString());
                         } else {
-                            messageAdapter.addMessage(message, MessageAdapter.DIRECTION_INCOMING);
+                            messageAdapter.addMessage(message, MessageAdapter.DIRECTION_INCOMING, "");
                         }
                     }
                 }
@@ -157,7 +157,7 @@ public class MessagingActivity extends Activity {
             //display an incoming message
             if (message.getSenderId().equals(recipientId)){
                 WritableMessage writableMessage = new WritableMessage(message.getRecipientIds().get(0), message.getTextBody());
-                messageAdapter.addMessage(writableMessage, MessageAdapter.DIRECTION_INCOMING);
+                messageAdapter.addMessage(writableMessage, MessageAdapter.DIRECTION_INCOMING, "");
 
                 //get latest message sent in parse and update seen to true
                 ParseQuery<ParseObject> query = ParseQuery.getQuery("ParseMessage");
@@ -201,9 +201,10 @@ public class MessagingActivity extends Activity {
                             parseMessage.put("recipientId", writableMessage.getRecipientIds().get(0));
                             parseMessage.put("messageText", writableMessage.getTextBody());
                             parseMessage.put("sinchId", writableMessage.getMessageId());
+                            parseMessage.put("messageSeen", false);
                             parseMessage.saveInBackground();
 
-                            messageAdapter.addMessage(writableMessage, MessageAdapter.DIRECTION_OUTGOING);
+                            messageAdapter.addMessage(writableMessage, MessageAdapter.DIRECTION_OUTGOING, "");
                         }
                     }
                 }

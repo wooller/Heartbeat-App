@@ -10,10 +10,18 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.example.messagingtutorialskeleton.R;
+import com.parse.FindCallback;
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
+import com.parse.ParseUser;
 import com.sinch.android.rtc.messaging.WritableMessage;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
+
 
 /**
  * Created by Andy on 17/03/2015.
@@ -23,16 +31,17 @@ public class MessageAdapter extends BaseAdapter {
     public static final int DIRECTION_INCOMING = 0;
     public static final int DIRECTION_OUTGOING = 1;
 
-    private List<Pair<WritableMessage, Integer>> messages;
+    private List<Triplet<WritableMessage, Integer, String>> messages;
     private LayoutInflater layoutInflater;
 
     public MessageAdapter(Activity activity){
         layoutInflater = activity.getLayoutInflater();
-        messages = new ArrayList<Pair<WritableMessage, Integer>>();
+        messages = new ArrayList<Triplet<WritableMessage, Integer, String>>();
+
     }
 
-    public void addMessage(WritableMessage message, int direction){
-        messages.add(new Pair(message, direction));
+    public void addMessage(WritableMessage message, int direction, String messageSeen){
+        messages.add(new Triplet(message, direction, messageSeen));
         notifyDataSetChanged();
     }
 
@@ -65,6 +74,7 @@ public class MessageAdapter extends BaseAdapter {
     public View getView(int i, View convertView, ViewGroup viewGroup){
         int direction = getItemViewType(i);
 
+
         //show message on left or right depending on if incoming or outgoing
         if (convertView == null){
             int res = 0;
@@ -81,7 +91,43 @@ public class MessageAdapter extends BaseAdapter {
         TextView txtMessage = (TextView) convertView.findViewById(R.id.txtMessage);
         txtMessage.setText(message.getTextBody());
 
-        Log.d("MessageAdapter", String.valueOf(direction));
+        if (direction == DIRECTION_OUTGOING){
+
+            String messageSeen = messages.get(i).third;
+            String messageSeenTxt;
+            if (messageSeen == "true"){
+                messageSeenTxt = "Seen";
+            }else{
+                messageSeenTxt = "";
+            }
+
+            TextView txtSent = (TextView) convertView.findViewById(R.id.txtSender);
+            txtSent.setText(messageSeenTxt);
+
+
+           /* ParseQuery<ParseObject> query = ParseQuery.getQuery("ParseMessage");
+            query.whereEqualTo("senderId", ParseUser.getCurrentUser().getObjectId());
+            query.whereEqualTo("recipientId", message.getRecipientIds().get(0));
+            query.addDescendingOrder("createdAt");
+            query.findInBackground(new FindCallback<ParseObject>() {
+                public void done(List<ParseObject> messagelist, ParseException e) {
+                    if (messagelist.size() != 0) {
+
+                        Log.d("MessageAdapter", String.valueOf(messagelist.size()));
+
+                        if (messagelist.get(0).get("messageSeen").toString() == "true") {
+
+
+                            txtSent.setText("Seen");
+                        }
+
+                    } else {
+                        Log.d("MessageAdapter", "Query Failed");
+                    }
+                }
+            });*/
+        }
+
 
         return convertView;
     }
