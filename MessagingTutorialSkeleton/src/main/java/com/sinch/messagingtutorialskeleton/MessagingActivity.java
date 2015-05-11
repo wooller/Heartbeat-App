@@ -98,7 +98,12 @@ public class MessagingActivity extends Activity {
                     for (int i = 0; i < messageList.size(); i++) {
                         WritableMessage message = new WritableMessage(messageList.get(i).get("recipientId").toString(), messageList.get(i).get("messageText").toString());
                         if (messageList.get(i).get("senderId").toString().equals(currentUserId)) {
-                            messageAdapter.addMessage(message, MessageAdapter.DIRECTION_OUTGOING, messageList.get(i).get("messageSeen").toString());
+                            if (messageList.get(i).containsKey("messageSeen")) {
+                                messageAdapter.addMessage(message, MessageAdapter.DIRECTION_OUTGOING, messageList.get(i).get("messageSeen").toString());
+                            }else{
+                                messageAdapter.addMessage(message, MessageAdapter.DIRECTION_OUTGOING, "false");
+                            }
+
                         } else {
                             messageAdapter.addMessage(message, MessageAdapter.DIRECTION_INCOMING, "");
                         }
@@ -201,7 +206,7 @@ public class MessagingActivity extends Activity {
                             parseMessage.put("recipientId", writableMessage.getRecipientIds().get(0));
                             parseMessage.put("messageText", writableMessage.getTextBody());
                             parseMessage.put("sinchId", writableMessage.getMessageId());
-                            parseMessage.put("messageSeen", false);
+                            //parseMessage.put("messageSeen", false);
                             parseMessage.saveInBackground();
 
                             messageAdapter.addMessage(writableMessage, MessageAdapter.DIRECTION_OUTGOING, "");
