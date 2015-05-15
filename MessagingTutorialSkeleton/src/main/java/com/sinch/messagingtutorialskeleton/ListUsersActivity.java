@@ -34,9 +34,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-/**
- * Created by Andy on 14/03/2015.
- */
+
 public class ListUsersActivity extends Activity {
 
 
@@ -101,7 +99,6 @@ public class ListUsersActivity extends Activity {
                 } else {
                     Toast.makeText(getApplicationContext(), "Error loading default spinner value", Toast.LENGTH_LONG).show();
                 }
-
             }
         });
 
@@ -111,7 +108,6 @@ public class ListUsersActivity extends Activity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 ParseUser user = ParseUser.getCurrentUser();
                 user.put("status", parent.getItemAtPosition(position));
-
                 if (parent.getItemAtPosition(position) == "online"){
                     user.put("status_color", "#000000");
                 } else if (parent.getItemAtPosition(position) == "offline"){
@@ -119,52 +115,38 @@ public class ListUsersActivity extends Activity {
                 } else if (parent.getItemAtPosition(position) == "busy"){
                     user.put("status_color", "#cb333b");
                 }
-
                 user.saveInBackground(new SaveCallback() {
                     @Override
                     public void done(ParseException e) {
                         if (e == null) {
-
+                            Toast.makeText(getApplicationContext(), "Status updated", Toast.LENGTH_LONG).show();
                         } else {
                             Toast.makeText(getApplicationContext(), "There was a problem updating your status", Toast.LENGTH_LONG).show();
                         }
                     }
-
                 });
-
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-
             }
         });
-
     }
 
         //set clickable list of users
         private void setConversationsList(){
-
             //Initialize the subclass of PQM
             listViewAdapter = new ListViewAdapter(this);
-
             //Initialize ListView and set initial view to listadapter
             usersListView = (ListView) findViewById(R.id.usersListView);
             usersListView.setAdapter(listViewAdapter);
-
-
-
-
-
             usersListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> a, View v, int i, long l) {
                     openConversation(listViewAdapter.getItem(i));
                 }
             });
-
         }
-
 
     //open conversation with one person
     public void openConversation(ParseObject name) {
@@ -180,7 +162,6 @@ public class ListUsersActivity extends Activity {
                 } else {
                     Toast.makeText(getApplicationContext(), "Error finding that user", Toast.LENGTH_SHORT).show();
                 }
-
             }
         });
     }
@@ -232,6 +213,5 @@ public class ListUsersActivity extends Activity {
             }
         };
         timer.schedule(timerTask, 30000, 30000);
-
     }
 }

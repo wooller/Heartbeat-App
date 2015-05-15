@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.parse.ParseUser;
 import com.sinch.android.rtc.ClientRegistration;
@@ -12,6 +13,9 @@ import com.sinch.android.rtc.Sinch;
 import com.sinch.android.rtc.SinchClient;
 import com.sinch.android.rtc.SinchClientListener;
 import com.sinch.android.rtc.SinchError;
+import com.sinch.android.rtc.calling.Call;
+import com.sinch.android.rtc.calling.CallClient;
+import com.sinch.android.rtc.calling.CallClientListener;
 import com.sinch.android.rtc.messaging.MessageClient;
 import com.sinch.android.rtc.messaging.MessageClientListener;
 import com.sinch.android.rtc.messaging.WritableMessage;
@@ -28,9 +32,11 @@ public class MessageService extends Service implements SinchClientListener {
     private final MessageServiceInterface serviceInterface = new MessageServiceInterface();
     private SinchClient sinchClient = null;
     private MessageClient messageClient = null;
+    private CallClient callClient = null;
     private String currentUserId;
     private LocalBroadcastManager broadcaster;
     private Intent broadcastIntent = new Intent("com.sinch.messagingtutorialskeleton.ListUsersActivity");
+    private Call call;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -59,8 +65,9 @@ public class MessageService extends Service implements SinchClientListener {
         //Client listener requires below methods
         sinchClient.addSinchClientListener(this);
 
-        //messaging is turned on but calling is not
+        //messaging and call are turned on
         sinchClient.setSupportMessaging(true);
+        sinchClient.setSupportCalling(true);
         sinchClient.setSupportActiveConnectionInBackground(true);
         sinchClient.setSupportPushNotifications(true);
 
@@ -91,6 +98,7 @@ public class MessageService extends Service implements SinchClientListener {
 
         client.startListeningOnActiveConnection();
         messageClient = client.getMessageClient();
+        callClient = client.getCallClient();
     }
 
     @Override
@@ -133,6 +141,27 @@ public class MessageService extends Service implements SinchClientListener {
         }
     }
 
+    public Call startCall(String recipientUserId) {
+        if (callClient != null) {
+            call = callClient.callUser(recipientUserId);
+
+        }
+        return call;
+    }
+
+    public void addCallClientListener(CallClientListener listener){
+        if (callClient != null){
+            callClient.addCallClientListener(listener);
+        }
+    }
+
+    public void removeCallClientListener(CallClientListener listener){
+        if (callClient != null){
+            callClient.removeCallClientListener(listener);
+        }
+    }
+
+
     @Override
     public void onDestroy(){
         sinchClient.stopListeningOnActiveConnection();
@@ -140,7 +169,7 @@ public class MessageService extends Service implements SinchClientListener {
     }
 
 
-    //public interface for ListUsersActivity and MessagingActivity
+    //public interface for ListUsersActivity, MessagingActivity and CallActivity
     public class MessageServiceInterface extends Binder {
 
         public void sendMessage(String recipientUserId, String textBody){
@@ -153,6 +182,18 @@ public class MessageService extends Service implements SinchClientListener {
 
         public void removeMessageClientListener(MessageClientListener listener){
             MessageService.this.removeMessageClientListener(listener);
+        }
+
+        public Call startCall (String recipientUserId){
+            return MessageService.this.startCall(recipientUserId);
+        }
+
+        public void addCallClientListener (CallClientListener listener){
+            MessageService.this.addCallClientListener(listener);
+        }
+
+        public void removeCallClientListener (CallClientListener listener){
+            MessageService.this.removeCallClientListener(listener);
         }
 
         public boolean isSinchClientStarted(){

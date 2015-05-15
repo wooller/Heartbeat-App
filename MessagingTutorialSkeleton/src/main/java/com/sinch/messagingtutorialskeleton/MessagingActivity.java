@@ -30,6 +30,8 @@ import com.sinch.android.rtc.messaging.MessageDeliveryInfo;
 import com.sinch.android.rtc.messaging.MessageFailureInfo;
 import com.sinch.android.rtc.messaging.WritableMessage;
 
+import org.json.JSONObject;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -49,6 +51,8 @@ public class MessagingActivity extends Activity {
     private String currentUserId;
     private ServiceConnection serviceConnection = new MyServiceConnection();
     private MessageClientListener messageClientListener = new MyMessageClientListener();
+    private Intent callIntent;
+    private String senderUsername;
 
 
     //MediaPlayer mp = MediaPlayer.create(this, R.raw.alert_tone_1);
@@ -60,6 +64,7 @@ public class MessagingActivity extends Activity {
 
         bindService(new Intent(this, MessageService.class), serviceConnection, BIND_AUTO_CREATE);
 
+
         //get recipientId from the intent
         Intent intent = getIntent();
         recipientId = intent.getStringExtra("RECIPIENT_ID");
@@ -70,7 +75,13 @@ public class MessagingActivity extends Activity {
         messageAdapter = new MessageAdapter(this);
         messagesList.setAdapter(messageAdapter);
 
+        //call the populateMessageHistory class
         populateMessageHistory();
+
+        //create the intent to start the CallActivity
+        callIntent = new Intent(getApplicationContext(), CallActivity.class);
+        callIntent.putExtra("callerId", currentUserId);
+        callIntent.putExtra("recipientId", recipientId);
 
         messageBodyField = (EditText) findViewById(R.id.messageBodyField);
 
@@ -80,6 +91,13 @@ public class MessagingActivity extends Activity {
             public void onClick(View view) {
                 //send the message
                 sendMessage();
+            }
+        });
+
+        findViewById(R.id.callButton).setOnClickListener(new View.OnClickListener(){
+            @Override
+        public void onClick (View view){
+                startActivity(callIntent);
             }
         });
 
@@ -206,7 +224,6 @@ public class MessagingActivity extends Activity {
                             parseMessage.put("recipientId", writableMessage.getRecipientIds().get(0));
                             parseMessage.put("messageText", writableMessage.getTextBody());
                             parseMessage.put("sinchId", writableMessage.getMessageId());
-                            //parseMessage.put("messageSeen", false);
                             parseMessage.saveInBackground();
 
                             messageAdapter.addMessage(writableMessage, MessageAdapter.DIRECTION_OUTGOING, "");
@@ -217,38 +234,41 @@ public class MessagingActivity extends Activity {
 
         }
 
-        //Start timer to check if a message has been seen
-        public void messageSeenTimer(){
 
-        }
 
         @Override
         public void onMessageDelivered(MessageClient client, MessageDeliveryInfo deliveryInfo){
-            //mp.start();
+
         }
 
         //set up for push notifications
         @Override
         public void onShouldSendPushData(MessageClient client, Message message, List<PushPair> pushPairs){
-
+            //sent a new writable message from the message just sent
             final WritableMessage writableMessage = new WritableMessage(message.getRecipientIds().get(0), message.getTextBody());
-
+            //create a parse query to get the username of the sender
+            ParseQuery<ParseUser> senderQuery = ParseUser.getQuery();
+            senderQuery.whereEqualTo("objectId", message.getSenderId());
+            senderQuery.findInBackground(new FindCallback<ParseUser>() {
+                @Override
+                public void done(List<ParseUser> reciplist, ParseException e) {
+                    if (e == null) {
+                        senderUsername = reciplist.get(0).get("username").toString();
+                    }
+                }
+            });
+            //create a parse user query to get the object id of the recipient user
             ParseQuery userQuery = ParseUser.getQuery();
             userQuery.whereEqualTo("objectId", writableMessage.getRecipientIds().get(0));
-
+            //create a push query to get the installation data of the recipient
             ParseQuery  pushQuery = ParseInstallation.getQuery();
             pushQuery.whereMatchesQuery("user", userQuery);
-
             //send push notification to query
             ParsePush push = new ParsePush();
             //set installation query
             push.setQuery(pushQuery);
-            push.setMessage("You got a new message");
+            push.setMessage("You got a new message from " + senderUsername);
             push.sendInBackground();
-
         }
-
-
     }
-
 }

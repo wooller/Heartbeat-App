@@ -11,6 +11,11 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
+    <!--Request use of Microphone for Sinch voice calling -->
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false"/>
+
     <!--Request permissions for Parse push notifications -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -48,6 +53,11 @@
             android:screenOrientation="portrait">
         </activity>
 
+        <activity
+            android:name="com.sinch.messagingtutorialskeleton.CallActivity"
+            android:screenOrientation="portrait">
+        </activity>
+
         <service android:name="com.parse.PushService" />
         <receiver android:name="com.parse.ParseBroadcastReceiver">
             <intent-filter>
@@ -60,10 +70,6 @@
             <intent-filter>
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
                 <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
-
-                <!--
-                  IMPORTANT: Change "com.parse.tutorials.pushnotifications" to match your app's package name.
-                -->
                 <category android:name="com.example.messagingtutorialskeleton" />
             </intent-filter>
         </receiver>
